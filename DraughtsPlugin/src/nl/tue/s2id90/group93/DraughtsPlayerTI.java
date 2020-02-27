@@ -212,8 +212,11 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
         }
 
         
-        //material and positional value (good thing)
+        //material value (good thing)
         int material_value = materialValue(p);
+
+        //positional value (good thing)
+        int positional_value = positionalValue(p);
 
         //tempi value (good thing)
         int tempi_value = tempiVal(p);
@@ -223,17 +226,29 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
 
         //loner value (i.e. pieces with no other adjacent pieces) (bad thing)
         int loner_value = lonerPiecesValue(p);
+
+        //holes value, i.e. empty spaces with at least 3 neighbors of same colour (bad thing)
+        int holes_value = holesValue(p);
         
-        int total_value = 3 * material_value + 1 * tempi_value
-                        + 1 * safe_value + 1 * loner_value; //can add modifiers
+        int total_value = 5 * material_value + 0 * positional_value + 3 * tempi_value
+                        + 0 * safe_value + 5 * loner_value + 0 * holes_value; //can add modifiers
         return total_value;
     }
 
-    //material and positional value
-    int materialValue(int[] p) {        
+    //material value
+    int materialValue(int[] p) {
+        int material_value = 0;
+        for (int i = 1; i < p.length; i++) {
+            material_value = material_value + p[i];
+        }
+        return material_value;
+    }
+
+    //positional value
+    int positionalValue(int[] p) {        
         //implement modifier of score, pieces closer to an edge get a lower
         //score, pieces closer to the middle get an higher score
-        int material_value = 0;
+        int positional_value = 0;
         //row 0, 1, 8, 9 get a multiplier of 1
         //row 2, 3, 6, 7 get a multiplier of 2
         //row 4, 5 get a multiplier of 3
@@ -241,31 +256,31 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
         for (int i = 1; i < p.length; i++) {
             if (i < 11 || i > 40) { //rows 0, 1, 8, 9
                 if (i % 5 == 0 || i % 5 == 1) { //columns 0,1,8,9
-                    material_value = material_value + p[i] * 1 * 1; //1 for row and column
+                    positional_value = positional_value + p[i] * 1 * 1; //1 for row and column
                 } else if (i % 5 == 2 || i % 5 == 4) { //columns 2,3,6,7
-                    material_value = material_value + p[i] * 1 * 2; //1 for row, 2 for column
+                    positional_value = positional_value + p[i] * 1 * 2; //1 for row, 2 for column
                 } else { //columns 4,5
-                    material_value = material_value + p[i] * 1 * 3; //1 for row, 3 for column
+                    positional_value = positional_value + p[i] * 1 * 3; //1 for row, 3 for column
                 }
             } else if (i < 21 || i > 30) { //rows 2,3,6,7
                 if (i % 5 == 0 || i % 5 == 1) { //columns 0,1,8,9
-                    material_value = material_value + p[i] * 2 * 1; //2 for row, 1 for column
+                    positional_value = positional_value + p[i] * 2 * 1; //2 for row, 1 for column
                 } else if (i % 5 == 2 || i % 5 == 4) { //columns 2,3,6,7
-                    material_value = material_value + p[i] * 2 * 2; //2 for row and column
+                    positional_value = positional_value + p[i] * 2 * 2; //2 for row and column
                 } else { //columns 4,5
-                    material_value = material_value + p[i] * 2 * 3; //2 for row, 3 for column
+                    positional_value = positional_value + p[i] * 2 * 3; //2 for row, 3 for column
                 }
             } else { //rows 4,5
                 if (i % 5 == 0 || i % 5 == 1) { //columns 0,1,8,9
-                    material_value = material_value + p[i] * 3 * 1; //3 for row, 1 for column
+                    positional_value = positional_value + p[i] * 3 * 1; //3 for row, 1 for column
                 } else if (i % 5 == 2 || i % 5 == 4) { //columns 2,3,6,7
-                    material_value = material_value + p[i] * 3 * 2; //3 for row, 2 for column
+                    positional_value = positional_value + p[i] * 3 * 2; //3 for row, 2 for column
                 } else { //columns 4,5
-                    material_value = material_value + p[i] * 3 * 3; //3 for row and column
+                    positional_value = positional_value + p[i] * 3 * 3; //3 for row and column
                 }
             }
         }
-        return material_value;
+        return positional_value;
     }
     
     //tempi value
@@ -304,17 +319,25 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
         }
         return safeValue;
     }
-
+    
+    //number of pieces without neighbors of same colour
     int lonerPiecesValue (int[] p) {
         //need function to get neighbouring squares
         //check if neighbouring squares are empty (might want to change to no neighbours of same colour)
         int lonerValue = 0;
         for(int i = 1; i < p.length; i ++) {
             boolean loner = true;
+            boolean white = p[i] == 1 || p[i] == 3;
             int[] neighbors = neighborSquares(i);
             for(int k = 0; k < neighbors.length; k++) {
-                if (p[neighbors[k]] != 0) { //check if all neighbors are empty
-                    loner = false;
+                if (white) {
+                    if (p[neighbors[k]] == 1 || p[neighbors[k]] == 3) { //check for white neighbors
+                        loner = false;
+                    }
+                } else {
+                    if (p[neighbors[k]] == -1 || p[neighbors[k]] == -3) { //check for black neighbors
+                        loner = false;
+                    }
                 }
             }
             if (loner) {
@@ -322,6 +345,34 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
             }
         }
         return lonerValue;
+    }
+
+    //number of holes, i.e. empty space surrounded by at least 3 pieces of the same colour
+    //colour gets minus points
+    int holesValue(int[] p) {
+        int holes_value = 0;
+        for(int i = 1; i < p.length; i ++) {
+            int white_neighbors = 0;
+            int black_neighbors = 0;
+            int[] neighbors = neighborSquares(i);
+            
+            if (p[i] == 0) {
+                for(int k = 0; k < neighbors.length; k++) {
+                    if (p[neighbors[k]] == 1 || p[neighbors[k]] == 3) { //check for white neighbors
+                        white_neighbors = white_neighbors + 1;
+                    }
+                    if (p[neighbors[k]] == -1 || p[neighbors[k]] == -3) { //check for black neighbors
+                        black_neighbors = black_neighbors + 1;
+                    }
+                }
+            }
+            if (white_neighbors >= 3) {
+                holes_value = holes_value - 1;
+            } else if (black_neighbors >= 3) {
+                holes_value = holes_value + 1;
+            }
+        }
+        return holes_value;
     }
 
     int[] neighborSquares(int i) {
