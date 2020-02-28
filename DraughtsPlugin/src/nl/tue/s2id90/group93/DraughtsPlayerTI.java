@@ -87,8 +87,7 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
     int alphaBeta(DraughtsNode node, int alpha, int beta, int depth)
             throws AIStoppedException
     {
-        //iterative deepening (to revert back remove while loop and change
-        //"value = function" to "return function")
+        //iterative deepening
         int curr_depth = 1;
         int value = 0;
         while (curr_depth <= depth) {
@@ -129,14 +128,14 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
         }
         List<Move> moves = state.getMoves();
         if (!moves.isEmpty()) {
-            node.setBestMove(moves.get(0)); //set first move as best, for timeout
+            node.setBestMove(moves.get(0)); //set first move as best, in case of timeout
         }
         while (!moves.isEmpty()) {
             Move bestMove = moves.remove(0); //get first move
-            state.doMove(bestMove);
+            state.doMove(bestMove); //try move
             DraughtsNode newNode = new DraughtsNode(state);
-            int x = alphaBetaMax(newNode, alpha, beta, depth-1);
-            state.undoMove(bestMove);
+            int x = alphaBetaMax(newNode, alpha, beta, depth-1); //recurse
+            state.undoMove(bestMove); //undo move
             if (x < beta) {   //not <= in case of the pruning
                 System.err.println("set move at depth: " + depth);
                 node.setBestMove(bestMove);
@@ -160,14 +159,14 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
         }
         List<Move> moves = state.getMoves();
         if (!moves.isEmpty()) {
-            node.setBestMove(moves.get(0)); //set first move as best, for timeout
+            node.setBestMove(moves.get(0)); //set first move as best, in case of timeout
         }
         while (!moves.isEmpty()) {
             Move bestMove = moves.remove(0); //get first move
-            state.doMove(bestMove);
+            state.doMove(bestMove); //try move
             DraughtsNode newNode = new DraughtsNode(state);
-            int x = alphaBetaMin(newNode, alpha, beta, depth-1);
-            state.undoMove(bestMove);
+            int x = alphaBetaMin(newNode, alpha, beta, depth-1); //recurse
+            state.undoMove(bestMove); //undo move
             if (x > alpha) {   //not >= in case of the pruning
                 System.err.println("set move at depth: " + depth);
                 node.setBestMove(bestMove);
@@ -221,21 +220,26 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
         //tempi value (good thing)
         int tempi_value = tempiVal(p);
 
-        //safe value (i.e. pieces adjacent to an edge) (good thing)
+        //safe value (good thing)
         int safe_value = safePiecesValue(p);
 
-        //loner value (i.e. pieces with no other adjacent pieces) (bad thing)
+        //loner value (bad thing)
         int loner_value = lonerPiecesValue(p);
 
-        //holes value, i.e. empty spaces with at least 3 neighbors of same colour (bad thing)
+        //holes value (bad thing)
         int holes_value = holesValue(p);
         
+        //total value
         int total_value = 5 * material_value + 0 * positional_value + 3 * tempi_value
-                        + 0 * safe_value + 5 * loner_value + 0 * holes_value; //can add modifiers
+                        + 0 * safe_value + 5 * loner_value + 0 * holes_value;
         return total_value;
     }
 
-    //material value
+    /** Computes the material value
+     * By counting the pieces
+     * @param p contains list with the pieces of this state
+     * @return the material value of this state
+     */
     int materialValue(int[] p) {
         int material_value = 0;
         for (int i = 1; i < p.length; i++) {
@@ -244,10 +248,13 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
         return material_value;
     }
 
-    //positional value
-    int positionalValue(int[] p) {        
-        //implement modifier of score, pieces closer to an edge get a lower
-        //score, pieces closer to the middle get an higher score
+    /** Computes the positional value value
+     * Pieces closer to an edge get a lower score, pieces in the middle
+     * get a higher score.
+     * @param p contains list with the pieces of this state
+     * @return the positional value of this state
+     */
+    int positionalValue(int[] p) {
         int positional_value = 0;
         //row 0, 1, 8, 9 get a multiplier of 1
         //row 2, 3, 6, 7 get a multiplier of 2
@@ -283,7 +290,12 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
         return positional_value;
     }
     
-    //tempi value
+    /** Computes the tempi value
+     * By multiplying the value of the pieces by how close they are to the
+     * advance row (i.e. the row where they become kings)
+     * @param p contains list with the pieces of this state
+     * @return the tempi value of this state
+     */
     int tempiVal(int[] p) {
         //tempi value
         //white - black
@@ -302,7 +314,11 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
         return tempi_value;
     }
 
-    //safe pieces (i.e. adjacent to an edge)
+    /** Computes the safe value
+     * By counting the pieces that are safe, i.e. that are adjacent to an edge
+     * @param p contains list with the pieces of this state
+     * @return the safe value of this state
+     */
     int safePiecesValue (int[] p) {
         int safeValue = 0;
 
@@ -320,15 +336,17 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
         return safeValue;
     }
     
-    //number of pieces without neighbors of same colour
+    /** Computes the loner value
+     * By counting the pieces that have no neighbors of the same color
+     * @param p contains list with the pieces of this state
+     * @return the loner value of this state
+     */
     int lonerPiecesValue (int[] p) {
-        //need function to get neighbouring squares
-        //check if neighbouring squares are empty (might want to change to no neighbours of same colour)
         int lonerValue = 0;
         for(int i = 1; i < p.length; i ++) {
             boolean loner = true;
             boolean white = p[i] == 1 || p[i] == 3;
-            int[] neighbors = neighborSquares(i);
+            int[] neighbors = neighborSquares(i); //get neighbor squares of piece
             for(int k = 0; k < neighbors.length; k++) {
                 if (white) {
                     if (p[neighbors[k]] == 1 || p[neighbors[k]] == 3) { //check for white neighbors
@@ -347,8 +365,12 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
         return lonerValue;
     }
 
-    //number of holes, i.e. empty space surrounded by at least 3 pieces of the same colour
-    //colour gets minus points
+    /** Computes the holes value
+     * By counting the empty spaces with at least 3 neighbors of the same color
+     * The player corresponding to the color gets negative points
+     * @param p contains list with the pieces of this state
+     * @return the holes value of this state
+     */
     int holesValue(int[] p) {
         int holes_value = 0;
         for(int i = 1; i < p.length; i ++) {
@@ -375,6 +397,11 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
         return holes_value;
     }
 
+    /** Computes the neighbor squares of a given piece
+     * This is a support method for loner and holes value
+     * @param i contains the square of the piece whose neighbors we want to know
+     * @return the list of indices of the neighboring squares
+     */
     int[] neighborSquares(int i) {
         //find row
         int row = ((i-1)/5) + 1; //final +1 is to get rows from 1-10 for rows 1-10
