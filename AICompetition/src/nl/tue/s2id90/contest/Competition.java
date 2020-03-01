@@ -45,7 +45,7 @@ public class Competition {
                 }
             }
         }
-        Collections.shuffle(games);
+        //Collections.shuffle(games);
         return games;
     }
     

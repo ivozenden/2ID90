@@ -2,8 +2,10 @@ package nl.tue.s2id90.group93;
 
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.MIN_VALUE;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import nl.tue.s2id90.draughts.DraughtsState;
 import nl.tue.s2id90.draughts.player.DraughtsPlayer;
 import org10x10.dam.game.Move;
@@ -16,20 +18,29 @@ import org10x10.dam.game.Move;
 //       for your player during the tournament
 public class DraughtsPlayerTI  extends DraughtsPlayer{
     private int bestValue=0;
-    int maxSearchDepth;
+    int maxSearchDepth = 5;
+    int[] weights;
+    float randomness = 0.05f;
     
     /** boolean that indicates that the GUI asked the player to stop thinking. */
     private boolean stopped;
 
-    public DraughtsPlayerTI(int maxSearchDepth) {
+    public DraughtsPlayerTI(int[] weights) {
         super("checkers-king.png"); // Done: replace with your own icon
-        this.maxSearchDepth = maxSearchDepth;
+        setWeights(weights);
+    }
+    
+    public void setWeights(int[] weights) {
+        this.weights = weights;
     }
     
     @Override public Move getMove(DraughtsState s) {
         Move bestMove = null;
         bestValue = 0;
         DraughtsNode node = new DraughtsNode(s.clone());    // the root of the search tree
+        if (Math.random() < randomness) {
+            return getRandomValidMove(s);
+        }
         try {
             // compute bestMove and bestValue in a call to alphabeta
             bestValue = alphaBeta(node, MIN_VALUE, MAX_VALUE, maxSearchDepth);
@@ -39,10 +50,10 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
             bestMove  = node.getBestMove();
             
             // print the results for debugging reasons
-            System.err.format(
-                "%s: depth= %2d, best move = %5s, value=%d\n", 
-                this.getClass().getSimpleName(),maxSearchDepth, bestMove, bestValue
-            );
+//            System.err.format(
+//                "%s: depth= %2d, best move = %5s, value=%d\n", 
+//                this.getClass().getSimpleName(),maxSearchDepth, bestMove, bestValue
+//            );
         } catch (AIStoppedException ex) {  /* nothing to do */  }
         
         if (bestMove==null) {
@@ -138,7 +149,7 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
             int x = alphaBetaMax(newNode, alpha, beta, depth-1);
             state.undoMove(bestMove);
             if (x < beta) {   //not <= in case of the pruning
-                System.err.println("set move at depth: " + depth);
+                //System.err.println("set move at depth: " + depth);
                 node.setBestMove(bestMove);
                 beta = x;
             }
@@ -169,7 +180,7 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
             int x = alphaBetaMin(newNode, alpha, beta, depth-1);
             state.undoMove(bestMove);
             if (x > alpha) {   //not >= in case of the pruning
-                System.err.println("set move at depth: " + depth);
+                //System.err.println("set move at depth: " + depth);
                 node.setBestMove(bestMove);
                 alpha = x;
             }
@@ -211,27 +222,24 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
             }
         }
 
-        
+        int[] values = new int[6];
         //material value (good thing)
-        int material_value = materialValue(p);
-
+        values[0] = materialValue(p);
         //positional value (good thing)
-        int positional_value = positionalValue(p);
-
+        values[1] = positionalValue(p);
         //tempi value (good thing)
-        int tempi_value = tempiVal(p);
-
+        values[2] = tempiVal(p);
         //safe value (i.e. pieces adjacent to an edge) (good thing)
-        int safe_value = safePiecesValue(p);
-
+        values[3] = safePiecesValue(p);
         //loner value (i.e. pieces with no other adjacent pieces) (bad thing)
-        int loner_value = lonerPiecesValue(p);
-
+        values[4] = lonerPiecesValue(p);
         //holes value, i.e. empty spaces with at least 3 neighbors of same colour (bad thing)
-        int holes_value = holesValue(p);
+        values[5] = holesValue(p);
         
-        int total_value = 5 * material_value + 0 * positional_value + 3 * tempi_value
-                        + 0 * safe_value + 5 * loner_value + 0 * holes_value; //can add modifiers
+        int total_value = 0;
+        for (int i = 0; i < values.length; i++) {
+            total_value += values[i] * weights[i];
+        }
         return total_value;
     }
 
@@ -429,5 +437,9 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
             }
         }
         return neighbors;
+    }
+    
+    @Override public String getName() {
+        return Arrays.toString(this.weights);
     }
 }

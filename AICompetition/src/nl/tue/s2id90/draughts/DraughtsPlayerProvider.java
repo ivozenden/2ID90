@@ -11,7 +11,7 @@ import nl.tue.s2id90.draughts.player.DraughtsPlayer;
  * @author huub
  */
 public class DraughtsPlayerProvider extends PlayerProvider<DraughtsPlayer> {
-    private final List<DraughtsPlayer> players;
+    private List<DraughtsPlayer> players;
     public DraughtsPlayerProvider(DraughtsPlayer ... arg) {
         this.players = new ArrayList<>();
         players.addAll(Arrays.asList(arg));
@@ -20,5 +20,5 @@ public class DraughtsPlayerProvider extends PlayerProvider<DraughtsPlayer> {
     @Override
     public List<DraughtsPlayer> getPlayers() {
         return players;
-    }       
+    }
 }

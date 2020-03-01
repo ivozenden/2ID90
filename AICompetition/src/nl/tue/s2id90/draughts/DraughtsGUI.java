@@ -299,7 +299,7 @@ public class DraughtsGUI
 //    }
 
     private void animateMove(Move m) {
-        final int ANIMATION_TIME=400; // milliseconds
+        final int ANIMATION_TIME=0; // milliseconds
         DraughtsState gameState = getCurrentGameState();
         getBoardPanel().getBoard().animateMoveForward(m, ANIMATION_TIME);
         gameState.doMove(m);
@@ -349,6 +349,9 @@ public class DraughtsGUI
         currentGame=null;
         setOptionsEnabled(true);
         setHumanMovesEnabled(false);
+        for(GameGuiListener<DraughtsState,Move> l : listeners) {
+            l.onStopGame(g);
+        }
     }
     
     @Override

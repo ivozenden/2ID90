@@ -74,10 +74,10 @@ public class CompetitionGUI<Competitor extends Player<M,S>, P extends PlayerProv
     
     protected GameGUI<S,Competitor,M> gameGUI;
     private final Predicate<Plugin> selector;
-    private final String[] pluginFolders;
+    public final String[] pluginFolders;
     protected Game currentGame=null;     // reference to current game, if this reference is null, there is no game going on
     protected List<CompetitionListener<M>> listeners = new ArrayList<>();
-    private Competition competition;
+    public Competition competition;    
     
     /**
      * Creates new form CompetitionGUI
@@ -472,13 +472,13 @@ public class CompetitionGUI<Competitor extends Player<M,S>, P extends PlayerProv
             public void done(M m) {
                 timer.stop();
                 
-                // sleep at least MIN DELAY ms before doing the move on the board
-                long dt = timer.elapsedTimeInMilliSeconds();
-                System.err.println("dt = " + dt + "/" + 1000*maxTime+"\n\n");
-                if (dt <MIN_DELAY) {
-                    sleep(MIN_DELAY-dt);
-                }
-                
+//                // sleep at least MIN DELAY ms before doing the move on the board
+//                long dt = timer.elapsedTimeInMilliSeconds();
+//                System.err.println("dt = " + dt + "/" + 1000*maxTime+"\n\n");
+//                if (dt <MIN_DELAY) {
+//                    sleep(MIN_DELAY-dt);
+//                }
+
                 // apply move in the current game state
                 if (gs.getMoves().contains(m)) {
                     //gs.doMove(m);
@@ -525,7 +525,7 @@ public class CompetitionGUI<Competitor extends Player<M,S>, P extends PlayerProv
         updateWhoIsToMove(gs);
     }
     
-    private void updateRanking() {
+    public void updateRanking() {
         final String[] columns = {"name", "W", "D","L", "P" };
         final Class[] classes = {String.class, Integer.class, Integer.class, Integer.class, Integer.class};
         
@@ -614,7 +614,7 @@ public class CompetitionGUI<Competitor extends Player<M,S>, P extends PlayerProv
         }
     }
     
-    private void fillTable(List<Game> schedule) {
+    public void fillTable(List<Game> schedule) {
         TableModel model = new DefaultTableModel(new String[]{"white", "black", "result"}, schedule.size());
         int row = 0;
         for (Game game : schedule) {
@@ -631,7 +631,7 @@ public class CompetitionGUI<Competitor extends Player<M,S>, P extends PlayerProv
 //</editor-fold>
 
     
-    private void updateGUI() {
+    public void updateGUI() {
         boolean scheduledGames = gamesTable.getModel().getRowCount()>0;
             startGameButton.setEnabled(scheduledGames && currentGame==null);
             stopGameButton.setEnabled(scheduledGames && currentGame!=null);
@@ -697,13 +697,15 @@ public class CompetitionGUI<Competitor extends Player<M,S>, P extends PlayerProv
         }
     }
 
-    private List<P> getPlugins(String[] pluginFolders) {
+    public List<P> getPlugins(String[] pluginFolders) {
         PluginManager pm = PluginManagerFactory.createPluginManager();
-        pm.addPluginsFrom(ClassURI.CLASSPATH, new OptionReportAfter());
+        //pm.addPluginsFrom(ClassURI.CLASSPATH, new OptionReportAfter());
         Arrays.asList(pluginFolders).stream().forEach(folder -> {
             pm.addPluginsFrom(new File(folder).toURI(), new OptionReportAfter());
         });
         PluginManagerUtil pmu= new PluginManagerUtil(pm);
         return pmu.getPlugins(Plugin.class).stream().filter(selector).map(p->(P)p).collect(Collectors.toList());
     }
+    
+    public void onStopGame(Game game) {}
 }

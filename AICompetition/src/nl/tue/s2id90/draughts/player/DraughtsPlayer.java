@@ -74,4 +74,6 @@ public abstract class DraughtsPlayer implements Player<Move,DraughtsState> {
     @Override public boolean isHuman() {
         return false;
     }
+    
+    public void setWeights(int[] weights) {}
 }

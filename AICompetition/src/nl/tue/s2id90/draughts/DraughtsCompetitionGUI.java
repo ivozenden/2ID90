@@ -1,14 +1,26 @@
 package nl.tue.s2id90.draughts;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import nl.tue.s2id90.contest.Competition;
 import nl.tue.s2id90.contest.CompetitionGUI;
+import nl.tue.s2id90.contest.SelectionPanel;
 import nl.tue.s2id90.draughts.player.DraughtsPlayer;
+import nl.tue.s2id90.game.Game;
+import nl.tue.s2id90.game.Player;
 import org10x10.dam.game.Move;
 
 /**
  *
  * @author huub
  */
-public  class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,DraughtsPlayerProvider, Move, DraughtsState> {
+public class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,DraughtsPlayerProvider, Move, DraughtsState> {
+    int[] bestWeights = new int[] {1,2,1,1,1,1};
+    int weightIndex = 0;
+    int newWeight;
+    boolean firstGameWon = false;
+    
     DraughtsCompetitionGUI(String[] pluginFolders) {
         super(p->(p instanceof DraughtsPlugin)&& (p instanceof DraughtsPlayerProvider), pluginFolders);
         DraughtsGUI gui = new DraughtsGUI();
@@ -20,7 +32,75 @@ public  class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,Draug
         // listen to eachother's events
         this.add(gui);
         gui.add(this);
+        
+        this.setVisible(true);
+        startLearningGame();
     }
+    
+    private void startLearningGame() {
+        int[] newWeights = Arrays.copyOf(bestWeights, bestWeights.length);
+        generateNewWeight();
+        newWeights[weightIndex] = newWeight;
+        List<DraughtsPlayer> players = this.getPlugins(pluginFolders).get(0).getPlayers();
+        int i = 0;
+        if (firstGameWon) i++;
+        players.get(i % 2).setWeights(bestWeights);
+        players.get((i + 1) % 2).setWeights(newWeights);
+        competition = new Competition(players);
+        fillTable(competition.getSchedule());
+        updateRanking();
+        updateGUI();
+        Game game = competition.getSchedule().get(0);
+        startGame(game);
+    }
+    
+    @Override public void onStopGame(Game game) {
+        System.out.println(game.getResult());
+        if (!firstGameWon && game.getResult() == Game.Result.BLACK_WINS) {
+            firstGameWon = true;
+            startLearningGame();
+        } else if (firstGameWon && game.getResult() == Game.Result.WHITE_WINS) {
+            bestWeights[weightIndex]=newWeight;
+            learnNextWeight();
+        } else {
+            learnNextWeight();
+        }
+    }
+    
+    private void learnNextWeight() {
+        firstGameWon = false;
+        weightIndex = (weightIndex + 1) % 5;
+        startLearningGame();
+    }
+    
+    public void generateNewWeight() {
+        int delta = getDelta(bestWeights);
+        System.out.println("delta: " + delta);
+        newWeight = (int) Math.round(
+            bestWeights[weightIndex] + 
+            Math.random()*delta*bestWeights[weightIndex]
+        );
+    }
+    
+    public static int getDelta(int[] weights) {
+        int delta = getMax(weights) - getMin(weights);
+        if (delta == 0) return 1;
+        else return delta;
+    }
+    public static int getMax(int[] inputArray){ 
+      int maxValue = inputArray[0]; 
+      for(int i=1;i < inputArray.length;i++){ 
+        if(inputArray[i] > maxValue) maxValue = inputArray[i]; 
+      } 
+      return maxValue; 
+    }
+    public static int getMin(int[] inputArray){ 
+      int minValue = inputArray[0]; 
+      for(int i=1;i<inputArray.length;i++){ 
+        if(inputArray[i] < minValue) minValue = inputArray[i]; 
+      } 
+      return minValue; 
+    } 
     
    /**
      * @param args the command line arguments
@@ -51,7 +131,7 @@ public  class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,Draug
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(() -> {
-            new DraughtsCompetitionGUI(args).setVisible(true);
+            new DraughtsCompetitionGUI(args);
         });
     } 
 }
