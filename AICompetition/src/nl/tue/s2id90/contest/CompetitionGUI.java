@@ -232,7 +232,7 @@ public class CompetitionGUI<Competitor extends Player<M,S>, P extends PlayerProv
                     .addGroup(jPanel3Layout.createSequentialGroup()
                         .addComponent(createScheduleButton, GroupLayout.PREFERRED_SIZE, 88, GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(startGameButton, GroupLayout.DEFAULT_SIZE, 77, Short.MAX_VALUE)
+                        .addComponent(startGameButton, GroupLayout.DEFAULT_SIZE, 83, Short.MAX_VALUE)
                         .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(stopGameButton, GroupLayout.PREFERRED_SIZE, 88, GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
@@ -415,8 +415,8 @@ public class CompetitionGUI<Competitor extends Player<M,S>, P extends PlayerProv
      */
     public void startGame(Game game) {
         currentGame = game;
-        System.err.println("white="+game.first.toString());
-        System.err.println("black="+game.second.toString());
+        //System.err.println("white="+game.first.toString());
+        //System.err.println("black="+game.second.toString());
         
         // initialize game state
         notifyCompetitionListeners(game, true); // notify of start of game

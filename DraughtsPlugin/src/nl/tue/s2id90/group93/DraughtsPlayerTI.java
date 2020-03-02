@@ -20,7 +20,7 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
     private int bestValue=0;
     int maxSearchDepth = 5;
     int[] weights;
-    float randomness = 0.05f;
+    float randomness = 0.2f;
     
     /** boolean that indicates that the GUI asked the player to stop thinking. */
     private boolean stopped;
