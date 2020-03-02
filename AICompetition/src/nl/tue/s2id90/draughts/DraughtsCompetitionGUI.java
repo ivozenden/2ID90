@@ -1,5 +1,4 @@
 package nl.tue.s2id90.draughts;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -10,33 +9,23 @@ import nl.tue.s2id90.draughts.player.DraughtsPlayer;
 import nl.tue.s2id90.game.Game;
 import nl.tue.s2id90.game.Player;
 import org10x10.dam.game.Move;
-
-/**
- *
- * @author huub
- */
 public class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,DraughtsPlayerProvider, Move, DraughtsState> {
-    int[] bestWeights = new int[] {1,2,1,1,1,1};
+    int[] bestWeights = new int[] {1,1,1,1,1,1};
     int weightIndex = 0;
     int newWeight;
     boolean firstGameWon = false;
-    
     DraughtsCompetitionGUI(String[] pluginFolders) {
         super(p->(p instanceof DraughtsPlugin)&& (p instanceof DraughtsPlayerProvider), pluginFolders);
         DraughtsGUI gui = new DraughtsGUI();
         initComponents(gui);
-        
         // install move board listener; no other place to put this code :-)
         gui.installMoveBoardListener();
-        
         // listen to eachother's events
         this.add(gui);
         gui.add(this);
-        
         this.setVisible(true);
         startLearningGame();
     }
-    
     private void startLearningGame() {
         int[] newWeights = Arrays.copyOf(bestWeights, bestWeights.length);
         generateNewWeight();
@@ -53,9 +42,9 @@ public class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,Draugh
         Game game = competition.getSchedule().get(0);
         startGame(game);
     }
-    
     @Override public void onStopGame(Game game) {
         System.out.println(game.getResult());
+        System.out.println(Arrays.toString(bestWeights));
         if (!firstGameWon && game.getResult() == Game.Result.BLACK_WINS) {
             firstGameWon = true;
             startLearningGame();
@@ -66,26 +55,19 @@ public class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,Draugh
             learnNextWeight();
         }
     }
-    
     private void learnNextWeight() {
         firstGameWon = false;
-        weightIndex = (weightIndex + 1) % 5;
+        weightIndex = (weightIndex + 1) % bestWeights.length;
         startLearningGame();
     }
-    
     public void generateNewWeight() {
-        int delta = getDelta(bestWeights);
+        int delta = getMax(bestWeights)-getMin(bestWeights);
         System.out.println("delta: " + delta);
         newWeight = (int) Math.round(
             bestWeights[weightIndex] + 
-            Math.random()*delta*bestWeights[weightIndex]
+            Math.random()*delta
         );
-    }
-    
-    public static int getDelta(int[] weights) {
-        int delta = getMax(weights) - getMin(weights);
-        if (delta == 0) return 1;
-        else return delta;
+        if (newWeight == bestWeights[weightIndex]) newWeight++;
     }
     public static int getMax(int[] inputArray){ 
       int maxValue = inputArray[0]; 
@@ -101,7 +83,6 @@ public class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,Draugh
       } 
       return minValue; 
     } 
-    
    /**
      * @param args the command line arguments
      */
