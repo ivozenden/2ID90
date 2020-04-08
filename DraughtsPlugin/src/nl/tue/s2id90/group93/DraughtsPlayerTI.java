@@ -14,6 +14,7 @@ import org10x10.dam.game.Move;
  */
 // Done: rename this class (and hence this file) to have a distinct name
 //       for your player during the tournament
+// Implementation made by Tommie Kerssies and Ivo Zenden
 public class DraughtsPlayerTI  extends DraughtsPlayer{
     private int bestValue=0;
     int maxSearchDepth;
@@ -96,6 +97,10 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
             } else  {
                 value = alphaBetaMin(node, alpha, beta, curr_depth);
             }
+            System.err.format(
+                "%s: depth= %2d, best move = %5s, value=%d\n", 
+                this.getClass().getSimpleName(),curr_depth, node.getBestMove(), value
+            );
             curr_depth++;
         }
         return value;
@@ -137,7 +142,7 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
             int x = alphaBetaMax(newNode, alpha, beta, depth-1); //recurse
             state.undoMove(bestMove); //undo move
             if (x < beta) {   //not <= in case of the pruning
-                System.err.println("set move at depth: " + depth);
+                //System.err.println("set move at depth: " + depth);
                 node.setBestMove(bestMove);
                 beta = x;
             }
@@ -168,7 +173,7 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
             int x = alphaBetaMin(newNode, alpha, beta, depth-1); //recurse
             state.undoMove(bestMove); //undo move
             if (x > alpha) {   //not >= in case of the pruning
-                System.err.println("set move at depth: " + depth);
+                //System.err.println("set move at depth: " + depth);
                 node.setBestMove(bestMove);
                 alpha = x;
             }
@@ -187,7 +192,7 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
     int evaluate(DraughtsState state) { 
         int[] pieces = state.getPieces();
         int[] p = new int[pieces.length];
-
+        
         //set value of white piece to 1, white king to 3 (holds automatically)
         //set value of black piece to -1, black king to -3
         for (int i = 1; i < pieces.length; i++) {
@@ -230,8 +235,8 @@ public class DraughtsPlayerTI  extends DraughtsPlayer{
         int holes_value = holesValue(p);
         
         //total value
-        int total_value = 5 * material_value + 0 * positional_value + 3 * tempi_value
-                        + 0 * safe_value + 5 * loner_value + 0 * holes_value;
+        int total_value = 6 * material_value + 3 * positional_value + 3 * tempi_value
+                        + 2 * safe_value + 1 * loner_value + 2 * holes_value;
         return total_value;
     }
 
