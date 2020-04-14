@@ -20,9 +20,11 @@ public class MyDraughtsPlugin extends DraughtsPlayerProvider implements Draughts
         // During the final competition you should make only your 
         // best player available. For testing it might be handy
         // to make more than one player available.
-        super(
-            new DraughtsPlayerTI(new int[] {1,1,1,1,1,1}),
-            new DraughtsPlayerTI(new int[] {1,1,1,1,1,1})
+        super(//new DraughtsPlayerTI(5)//,
+                //new UninformedPlayer(), //removed since only one player wanted
+                //new OptimisticPlayer(),
+                //new BuggyPlayer()
+                new TI_v2(8)
         );
     }
 }
