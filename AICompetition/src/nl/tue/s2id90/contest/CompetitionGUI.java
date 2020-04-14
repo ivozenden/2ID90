@@ -220,7 +220,6 @@ public class CompetitionGUI<Competitor extends Player<M,S>, P extends PlayerProv
         timeSlider.setPaintTrack(false);
         timeSlider.setSnapToTicks(true);
         timeSlider.setToolTipText("<html>maximum thinking time<br>for computer player");
-        timeSlider.setValue(2);
 
         GroupLayout jPanel3Layout = new GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);

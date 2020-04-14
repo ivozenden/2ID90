@@ -2,6 +2,8 @@ package nl.tue.s2id90.draughts;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import nl.tue.s2id90.contest.Competition;
 import nl.tue.s2id90.contest.CompetitionGUI;
 import nl.tue.s2id90.contest.SelectionPanel;
@@ -10,12 +12,12 @@ import nl.tue.s2id90.game.Game;
 import nl.tue.s2id90.game.Player;
 import org10x10.dam.game.Move;
 public class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,DraughtsPlayerProvider, Move, DraughtsState> {
-    final static int gamesPerWeight = 10; // must be an even number such that same amount of white/black games are tried
-    int[] weights = new int[] {1,1,1,1,1,1};
+    final static int gamesPerWeight = 100; // must be an even number such that same amount of white/black games are tried
+    int[] weights = new int[] {1,1,1,1,1,1}; // best weigths found after running the whole night are: {6, 3, 3, 2, 1, 2}
     int[] newWeights;
     int weightIndex = 0;
-    int gameNumber = 0;
-    int gamesWon = 0;
+    int gamesPlayed = 0;
+    float points = 0; // one point for win, half for draw
     DraughtsCompetitionGUI(String[] pluginFolders) {
         super(p->(p instanceof DraughtsPlugin)&& (p instanceof DraughtsPlayerProvider), pluginFolders);
         DraughtsGUI gui = new DraughtsGUI();
@@ -30,8 +32,8 @@ public class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,Draugh
     }
     private void startGame() {
         List<DraughtsPlayer> players = this.getPlugins(pluginFolders).get(0).getPlayers();
-        players.get(gameNumber % 2).setWeights(weights);
-        players.get(gameNumber % 2).setWeights(newWeights);
+        players.get(gamesPlayed % 2).setWeights(weights);
+        players.get((gamesPlayed + 1) % 2).setWeights(newWeights);
         competition = new Competition(players);
         List<Game> singleGameList = new ArrayList<>();
         singleGameList.add(competition.getSchedule().get(0));
@@ -41,50 +43,41 @@ public class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,Draugh
         startGame(singleGameList.get(0));
     }
     @Override public void onStopGame(Game game) {
-        System.out.println("game "+gameNumber+" for weights "+Arrays.toString(weights)+": "+game.getResult());
-        if ((gameNumber % 2 == 0 && game.getResult() == Game.Result.BLACK_WINS)
-            || (gameNumber % 2 == 1 && game.getResult() == Game.Result.WHITE_WINS)) {
-            gamesWon++;
+        gamesPlayed++;
+        if ((gamesPlayed % 2 == 0 && game.getResult() == Game.Result.BLACK_WINS)
+            || (gamesPlayed % 2 == 1 && game.getResult() == Game.Result.WHITE_WINS)) {
+            points = points + 1;
+        } else if (game.getResult() == Game.Result.DRAW) {
+            points = points + 0.5f;
         }
-        if (gameNumber+1-gamesWon >= gamesPerWeight/2) {
-            
-        } else if (gameNumber != gamesPerWeight-1) {
-            gameNumber++;
+        System.out.println("game "+gamesPlayed+" (new points is "+points+") for old weights "+Arrays.toString(weights)+" to new weights "+Arrays.toString(newWeights)+": "+game.getResult());
+
+        if (points > gamesPerWeight/2) {
+            weights = Arrays.copyOf(newWeights, newWeights.length);
+            learnNextWeight();
+        } else if (gamesPlayed-points >= gamesPerWeight/2) {
+            learnNextWeight();
+        } else if (gamesPlayed != gamesPerWeight) {
             startGame();
-        } else if (gamesWon > gamesPerWeight/2)
-            return;
         }
     }
     private void learnNextWeight() {
-        gameNumber = 0;
+        points = 0;
+        gamesPlayed = 0;
         weightIndex = (weightIndex + 1) % weights.length;
         newWeights = Arrays.copyOf(weights, weights.length);
         newWeights[weightIndex] = getNewWeight();
         startGame();
     }
     public int getNewWeight() {
-        int delta = getMax(weights)-getMin(weights);
-        System.out.println("delta: " + delta);
+        int sign = 1;
+        if(Math.random() > 0.5) sign = -1; // also try weight reductions as the optimal weight might be below a previous addition
         int newWeight = (int) Math.round(weights[weightIndex] + 
-            Math.random()*delta
+            Math.random()*weights[weightIndex]*sign
         );
-        if (newWeight == weights[weightIndex]) return newWeight + 1; 
+        if (newWeight == weights[weightIndex] || newWeight < 1) return getNewWeight(); 
         else return newWeight;
     }
-    public static int getMax(int[] inputArray){ 
-      int maxValue = inputArray[0]; 
-      for(int i=1;i < inputArray.length;i++){ 
-        if(inputArray[i] > maxValue) maxValue = inputArray[i]; 
-      } 
-      return maxValue; 
-    }
-    public static int getMin(int[] inputArray){ 
-      int minValue = inputArray[0]; 
-      for(int i=1;i<inputArray.length;i++){ 
-        if(inputArray[i] < minValue) minValue = inputArray[i]; 
-      } 
-      return minValue; 
-    } 
    /**
      * @param args the command line arguments
      */
