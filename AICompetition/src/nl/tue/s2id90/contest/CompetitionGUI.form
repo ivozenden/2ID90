@@ -208,6 +208,7 @@
                         <Property name="paintTrack" type="boolean" value="false"/>
                         <Property name="snapToTicks" type="boolean" value="true"/>
                         <Property name="toolTipText" type="java.lang.String" value="&lt;html&gt;maximum thinking time&lt;br&gt;for computer player"/>
+                        <Property name="value" type="int" value="3"/>
                       </Properties>
                     </Component>
                   </SubComponents>

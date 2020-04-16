@@ -12,10 +12,10 @@ import nl.tue.s2id90.game.Game;
 import nl.tue.s2id90.game.Player;
 import org10x10.dam.game.Move;
 public class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,DraughtsPlayerProvider, Move, DraughtsState> {
-    final static int gamesPerWeight = 100; // must be an even number such that same amount of white/black games are tried
-    int[] weights = new int[] {1,1,1,1,1,1}; // best weigths found after running the whole night are: {6, 3, 3, 2, 1, 2}
-    int[] newWeights;
-    int weightIndex = 0;
+    int[] weights = {10,7,4,4,5,6}; // best weigths found after running the whole night are: {6, 3, 3, 2, 1, 2}
+    ArrayList<Integer>[] prevWeights = new ArrayList[6];
+    int newWeight;
+    int weightIndex = 5;
     int gamesPlayed = 0;
     float points = 0; // one point for win, half for draw
     DraughtsCompetitionGUI(String[] pluginFolders) {
@@ -28,12 +28,16 @@ public class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,Draugh
         this.add(gui);
         gui.add(this);
         this.setVisible(true);
+        for (int i=0;i<6;i++) {
+            prevWeights[i] = new ArrayList<Integer>();
+            prevWeights[i].add(weights[i]);
+        }
         learnNextWeight();
     }
     private void startGame() {
         List<DraughtsPlayer> players = this.getPlugins(pluginFolders).get(0).getPlayers();
         players.get(gamesPlayed % 2).setWeights(weights);
-        players.get((gamesPlayed + 1) % 2).setWeights(newWeights);
+        players.get((gamesPlayed + 1) % 2).setWeights(getNewWeights());
         competition = new Competition(players);
         List<Game> singleGameList = new ArrayList<>();
         singleGameList.add(competition.getSchedule().get(0));
@@ -43,6 +47,7 @@ public class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,Draugh
         startGame(singleGameList.get(0));
     }
     @Override public void onStopGame(Game game) {
+        previousStates = new ArrayList<>();
         gamesPlayed++;
         if ((gamesPlayed % 2 == 0 && game.getResult() == Game.Result.BLACK_WINS)
             || (gamesPlayed % 2 == 1 && game.getResult() == Game.Result.WHITE_WINS)) {
@@ -50,23 +55,32 @@ public class DraughtsCompetitionGUI extends CompetitionGUI<DraughtsPlayer,Draugh
         } else if (game.getResult() == Game.Result.DRAW) {
             points = points + 0.5f;
         }
-        System.out.println("game "+gamesPlayed+" (new points is "+points+") for old weights "+Arrays.toString(weights)+" to new weights "+Arrays.toString(newWeights)+": "+game.getResult());
+        System.out.println("game "+gamesPlayed+" (new points is "+points+") for weights "+Arrays.toString(weights)+" to new weights "+Arrays.toString(getNewWeights())+": "+game.getResult());
 
-        if (points > gamesPerWeight/2) {
-            weights = Arrays.copyOf(newWeights, newWeights.length);
+        int totalGames = prevWeights[weightIndex].size()*2;
+        if (points > totalGames/2) {
+            prevWeights[weightIndex].add(newWeight);
+            System.out.println(Arrays.toString(prevWeights));
             learnNextWeight();
-        } else if (gamesPlayed-points >= gamesPerWeight/2) {
+        } else if (gamesPlayed-points >= totalGames/2) {
             learnNextWeight();
-        } else if (gamesPlayed != gamesPerWeight) {
+        } else if (gamesPlayed != totalGames) {
+            if (gamesPlayed % 2 == 0)
+                weights[weightIndex] = prevWeights[weightIndex].get((totalGames-gamesPlayed)/2 - 1);
             startGame();
         }
     }
+    int[] getNewWeights() {
+        int[] newWeights = Arrays.copyOf(weights, weights.length);
+        newWeights[weightIndex] = newWeight;
+        return newWeights;
+    }
     private void learnNextWeight() {
+        weights[weightIndex] = prevWeights[weightIndex].get(prevWeights[weightIndex].size()-1);
         points = 0;
         gamesPlayed = 0;
         weightIndex = (weightIndex + 1) % weights.length;
-        newWeights = Arrays.copyOf(weights, weights.length);
-        newWeights[weightIndex] = getNewWeight();
+        newWeight = getNewWeight();
         startGame();
     }
     public int getNewWeight() {

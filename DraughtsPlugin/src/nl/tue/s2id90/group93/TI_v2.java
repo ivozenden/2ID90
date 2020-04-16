@@ -2,6 +2,7 @@ package nl.tue.s2id90.group93;
 
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.MIN_VALUE;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import nl.tue.s2id90.draughts.DraughtsState;
@@ -15,19 +16,30 @@ import org10x10.dam.game.Move;
 public class TI_v2 extends DraughtsPlayer{
     private int bestValue=0;
     int maxSearchDepth;
+    float randomness = 0.0f; //Add randomness so the AI can play against itself many times
+    int[] weights;
     
     /** boolean that indicates that the GUI asked the player to stop thinking. */
     private boolean stopped;
 
-    public TI_v2(int maxSearchDepth) {
+    public TI_v2(int maxSearchDepth, int[] weights) {
         super("checkers-king.png"); // Done: replace with your own icon
         this.maxSearchDepth = maxSearchDepth;
+        setWeights(weights);
+    }
+    
+    @Override
+    public void setWeights(int[] weights) {
+        this.weights = weights;
     }
     
     @Override public Move getMove(DraughtsState s) {
         Move bestMove = null;
         bestValue = 0;
         DraughtsNode node = new DraughtsNode(s.clone());    // the root of the search tree
+        if (Math.random() < randomness) {
+            return getRandomValidMove(s);
+        }
         try {
             //We moved the iterative deepening here, since at the previous location
             //the full deepening had to end before the best move was set
@@ -49,10 +61,10 @@ public class TI_v2 extends DraughtsPlayer{
                     bestMove  = node.getBestMove();
 
                     // print the results for debugging reasons
-                    System.err.format(
-                        "%s: depth= %2d, best move = %5s, value=%d\n", 
-                        this.getClass().getSimpleName(), depth, bestMove, bestValue
-                    );
+//                    System.err.format(
+//                        "%s: depth= %2d, best move = %5s, value=%d\n", 
+//                        this.getClass().getSimpleName(), depth, bestMove, bestValue
+//                    );
                 }
                 
                 // increase depth
@@ -274,24 +286,24 @@ public class TI_v2 extends DraughtsPlayer{
         
         //a good thing means players earn points doing it, and a bad thing means
         //players lose points for doing it
-
+        int[] values = new int[6];
         //material value (good thing)
-        int material_value = materialValue(p);
+        values[0] = materialValue(p);
         
         //balance value (good thing)
-        int balance_value = balanceValue(pieces);
+        values[1] = balanceValue(pieces);
         
         //defender value (good thing)
-        int defender_value = defenderValue(p);
+        values[2] = defenderValue(p);
         
         //center value (good thing)
-        int center_value = centerValue(p);
+        values[3] = centerValue(p);
         
         //formation value (good thing)
-        int formation_value = formationValue(p);
+        values[4] = formationValue(p);
 
         //tempi value (good thing)
-        int tempi_value = tempiVal(p);
+        values[5] = tempiVal(p);
 
         //safe value (good thing)
         //int safe_value = safePiecesValue(p);
@@ -302,12 +314,11 @@ public class TI_v2 extends DraughtsPlayer{
         //holes value (bad thing)
         //int holes_value = holesValue(p);
         
-        //total value 
-        //10 4 3 4 5 4 finishes tests
-        int total_value = 10 * material_value + 7 * center_value + 4 * tempi_value
-                        + 4 * balance_value + 5 * defender_value + 6 * formation_value;
-//        int total_value = 6 * material_value + 3 * center_value + 3 * tempi_value
-//                        + 2 * safe_value + 1 * loner_value + 2 * holes_value;
+        //total value
+        int total_value = 0;
+        for (int i = 0; i < values.length; i++) {
+            total_value += values[i] * weights[i];
+        }
         return total_value;
     }
 
@@ -657,6 +668,10 @@ public class TI_v2 extends DraughtsPlayer{
             }
         }
         return neighbors;
+    }
+    
+    @Override public String getName() {
+        return Arrays.toString(this.weights);
     }
 }
 

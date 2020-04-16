@@ -68,7 +68,7 @@ import nl.tue.win.util.Timer;
 public class CompetitionGUI<Competitor extends Player<M,S>, P extends PlayerProvider<Competitor>, M, S extends GameState<M>> 
     extends javax.swing.JFrame implements GameGuiListener<S,M> {
     private static final Logger LOG = Logger.getLogger(CompetitionGUI.class.getName());
-    
+    public List<String> previousStates = new ArrayList<>();
     
     //private List<Game> schedule;
     
@@ -220,6 +220,7 @@ public class CompetitionGUI<Competitor extends Player<M,S>, P extends PlayerProv
         timeSlider.setPaintTrack(false);
         timeSlider.setSnapToTicks(true);
         timeSlider.setToolTipText("<html>maximum thinking time<br>for computer player");
+        timeSlider.setValue(3);
 
         GroupLayout jPanel3Layout = new GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
@@ -431,6 +432,20 @@ public class CompetitionGUI<Competitor extends Player<M,S>, P extends PlayerProv
         
     SearchTask currentSearchTask=null;
     private void continueGame(final Game game, final S gs) {
+        String currentState = gs.toString();
+        for (String previousState : previousStates) {
+            if (previousState.equals(currentState)) {
+                System.err.println("Game stuck!");
+                game.setResult(Result.DRAW);
+                currentGame = null;
+                updateGUI(); updateGUI(game,gs);
+                gamesTable.setModel(gamesTable.getModel()); // redraw ????
+                updateRanking();
+                notifyCompetitionListeners(game,false);
+                return;
+            }
+        }
+        previousStates.add(currentState);
         if ((currentGame==null) || gs.isEndState()) {
             finishGame(game,gs);
         } else {
@@ -466,7 +481,7 @@ public class CompetitionGUI<Competitor extends Player<M,S>, P extends PlayerProv
         final Timer timer = new Timer();
         final int maxTime = timeSlider.getValue();
         searchTask = new TimedSearchTask<M, Long, S>(currentPlayer, gs, maxTime*1000) {
-            private long MIN_DELAY=1500; // minimum time for a move 1500 milliseconds
+            private long MIN_DELAY=0; // minimum time for a move 1500 milliseconds
             @Override
             public void done(M m) {
                 timer.stop();

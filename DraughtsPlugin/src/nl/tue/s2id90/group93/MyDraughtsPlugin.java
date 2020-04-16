@@ -24,7 +24,8 @@ public class MyDraughtsPlugin extends DraughtsPlayerProvider implements Draughts
                 //new UninformedPlayer(), //removed since only one player wanted
                 //new OptimisticPlayer(),
                 //new BuggyPlayer()
-                new TI_v2(8)
+                new TI_v2(8, new int[] {1,1,1,1,1,1}),
+                new TI_v2(8, new int[] {1,1,1,1,1,1})
         );
     }
 }
